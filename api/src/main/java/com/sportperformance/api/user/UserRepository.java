@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
 public class UserRepository {
@@ -17,37 +16,39 @@ public class UserRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> new User(
-        UUID.fromString(rs.getString("id")),
-        rs.getString("user_number"),
-        rs.getString("academy_id") != null ? UUID.fromString(rs.getString("academy_id")) : null,
-        rs.getString("email"),
-        rs.getString("role"),
-        rs.getBoolean("is_active"),
-        rs.getObject("created_at", OffsetDateTime.class)
-    );
+    private static final RowMapper<User> ROW_MAPPER = (rs, rowNum) -> {
+        Long academyNumber = rs.getObject("academy_number", Long.class);
+        return new User(
+            rs.getLong("id"),
+            rs.getLong("user_number"),
+            rs.getString("email"),
+            rs.getString("role"),
+            rs.getBoolean("is_active"),
+            academyNumber,
+            rs.getObject("created_at", OffsetDateTime.class)
+        );
+    };
 
     public User save(User user) {
         String sql = """
-            INSERT INTO app_user (id, user_number, academy_id, email, role, is_active, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-            RETURNING id, user_number, academy_id, email, role, is_active, created_at
+            INSERT INTO app_user (user_number, email, role, is_active, academy_number, created_at)
+            VALUES (?, ?, ?, ?, ?, ?)
+            RETURNING id, user_number, email, role, is_active, academy_number, created_at
             """;
         
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER,
-            user.id(),
             user.userNumber(),
-            user.academyId(),
             user.email(),
             user.role(),
             user.isActive(),
+            user.academyNumber(),
             user.createdAt()
         );
     }
 
     public Optional<User> findByEmail(String email) {
         String sql = """
-            SELECT id, user_number, academy_id, email, role, is_active, created_at
+            SELECT id, user_number, email, role, is_active, academy_number, created_at
             FROM app_user
             WHERE email = ?
             """;
@@ -66,7 +67,7 @@ public class UserRepository {
         return count != null && count > 0;
     }
 
-    public boolean existsByUserNumber(String userNumber) {
+    public boolean existsByUserNumber(Long userNumber) {
         String sql = "SELECT COUNT(*) FROM app_user WHERE user_number = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, userNumber);
         return count != null && count > 0;

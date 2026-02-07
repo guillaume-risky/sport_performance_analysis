@@ -6,7 +6,7 @@ import java.util.UUID;
 public record InviteToken(
     UUID id,
     String token,
-    UUID academyId,
+    String academyNumber,
     String email,
     String role,
     OffsetDateTime expiresAt,

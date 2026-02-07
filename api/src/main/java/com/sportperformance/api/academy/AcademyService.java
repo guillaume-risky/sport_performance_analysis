@@ -1,55 +1,51 @@
 package com.sportperformance.api.academy;
 
 import com.sportperformance.api.common.ResourceConflictException;
-import com.sportperformance.api.common.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.security.SecureRandom;
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Service
 public class AcademyService {
 
     private final AcademyRepository academyRepository;
+    private static final SecureRandom random = new SecureRandom();
 
     public AcademyService(AcademyRepository academyRepository) {
         this.academyRepository = academyRepository;
     }
 
     @Transactional
-    public AcademyResponse createAcademy(AcademyRequest request) {
-        if (academyRepository.existsByAcademyNumber(request.academyNumber())) {
-            throw new ResourceConflictException("Academy with number " + request.academyNumber() + " already exists");
-        }
-
+    public Academy createAcademy(String name, String logoUrl, String primaryColor) {
+        Long academyNumber = generateUniqueAcademyNumber();
+        
         Academy academy = new Academy(
-            UUID.randomUUID(),
-            request.academyNumber(),
-            request.name(),
-            request.themeColor(),
-            request.logoUrl(),
+            null,
+            academyNumber,
+            name,
+            logoUrl,
+            primaryColor,
             OffsetDateTime.now()
         );
 
-        Academy saved = academyRepository.save(academy);
-        return toResponse(saved);
+        return academyRepository.save(academy);
     }
 
-    public AcademyResponse getAcademyByNumber(String academyNumber) {
-        Academy academy = academyRepository.findByAcademyNumber(academyNumber)
-            .orElseThrow(() -> new ResourceNotFoundException("Academy with number " + academyNumber + " not found"));
-        return toResponse(academy);
+    public Academy findByAcademyNumber(Long academyNumber) {
+        return academyRepository.findByAcademyNumber(academyNumber)
+            .orElseThrow(() -> new AcademyNotFoundException("Academy with number " + academyNumber + " not found"));
     }
 
-    private AcademyResponse toResponse(Academy academy) {
-        return new AcademyResponse(
-            academy.id(),
-            academy.academyNumber(),
-            academy.name(),
-            academy.themeColor(),
-            academy.logoUrl(),
-            academy.createdAt()
-        );
+    private Long generateUniqueAcademyNumber() {
+        int maxAttempts = 10;
+        for (int i = 0; i < maxAttempts; i++) {
+            long number = 100000000L + random.nextLong(900000000L);
+            if (!academyRepository.existsByAcademyNumber(number)) {
+                return number;
+            }
+        }
+        throw new ResourceConflictException("Failed to generate unique academy number after " + maxAttempts + " attempts");
     }
 }

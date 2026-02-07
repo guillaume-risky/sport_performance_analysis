@@ -5,7 +5,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Service
 public class UserService {
@@ -17,7 +16,7 @@ public class UserService {
     }
 
     @Transactional
-    public User createUser(String email, String role, UUID academyId, String userNumber) {
+    public User createUser(String email, String role, Long userNumber) {
         if (userRepository.existsByEmail(email)) {
             throw new ResourceConflictException("User with email " + email + " already exists");
         }
@@ -26,27 +25,27 @@ public class UserService {
             throw new ResourceConflictException("User with number " + userNumber + " already exists");
         }
 
-        String finalUserNumber = userNumber != null ? userNumber : generateUserNumber();
+        Long finalUserNumber = userNumber != null ? userNumber : generateUserNumber();
 
         User user = new User(
-            UUID.randomUUID(),
+            null,
             finalUserNumber,
-            academyId,
             email,
             role,
             true,
+            null, // academyNumber
             OffsetDateTime.now()
         );
 
         return userRepository.save(user);
     }
 
-    public User getOrCreateUser(String email, String role, UUID academyId) {
+    public User getOrCreateUser(String email, String role) {
         return userRepository.findByEmail(email)
-            .orElseGet(() -> createUser(email, role, academyId, null));
+            .orElseGet(() -> createUser(email, role, null));
     }
 
-    private String generateUserNumber() {
-        return "USR-" + System.currentTimeMillis();
+    private Long generateUserNumber() {
+        return System.currentTimeMillis();
     }
 }

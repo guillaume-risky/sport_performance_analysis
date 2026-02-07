@@ -6,7 +6,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.OffsetDateTime;
 import java.util.Optional;
-import java.util.UUID;
 
 @Repository
 public class AcademyRepository {
@@ -18,34 +17,33 @@ public class AcademyRepository {
     }
 
     private static final RowMapper<Academy> ROW_MAPPER = (rs, rowNum) -> new Academy(
-        UUID.fromString(rs.getString("id")),
-        rs.getString("academy_number"),
+        rs.getLong("id"),
+        rs.getLong("academy_number"),
         rs.getString("name"),
-        rs.getString("theme_color"),
         rs.getString("logo_url"),
+        rs.getString("primary_color"),
         rs.getObject("created_at", OffsetDateTime.class)
     );
 
     public Academy save(Academy academy) {
         String sql = """
-            INSERT INTO academy (id, academy_number, name, theme_color, logo_url, created_at)
-            VALUES (?, ?, ?, ?, ?, ?)
-            RETURNING id, academy_number, name, theme_color, logo_url, created_at
+            INSERT INTO academy (academy_number, name, logo_url, primary_color, created_at)
+            VALUES (?, ?, ?, ?, ?)
+            RETURNING id, academy_number, name, logo_url, primary_color, created_at
             """;
         
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER,
-            academy.id(),
             academy.academyNumber(),
             academy.name(),
-            academy.themeColor(),
             academy.logoUrl(),
+            academy.primaryColor(),
             academy.createdAt()
         );
     }
 
-    public Optional<Academy> findByAcademyNumber(String academyNumber) {
+    public Optional<Academy> findByAcademyNumber(Long academyNumber) {
         String sql = """
-            SELECT id, academy_number, name, theme_color, logo_url, created_at
+            SELECT id, academy_number, name, logo_url, primary_color, created_at
             FROM academy
             WHERE academy_number = ?
             """;
@@ -58,7 +56,7 @@ public class AcademyRepository {
         }
     }
 
-    public boolean existsByAcademyNumber(String academyNumber) {
+    public boolean existsByAcademyNumber(Long academyNumber) {
         String sql = "SELECT COUNT(*) FROM academy WHERE academy_number = ?";
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, academyNumber);
         return count != null && count > 0;

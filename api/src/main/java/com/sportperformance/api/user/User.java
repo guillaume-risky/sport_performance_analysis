@@ -1,14 +1,13 @@
 package com.sportperformance.api.user;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 public record User(
-    UUID id,
-    String userNumber,
-    UUID academyId,
+    Long id,
+    Long userNumber,
     String email,
     String role,
     Boolean isActive,
+    Long academyNumber,
     OffsetDateTime createdAt
 ) {}

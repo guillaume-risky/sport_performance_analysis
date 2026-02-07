@@ -1,13 +1,12 @@
 package com.sportperformance.api.academy;
 
 import java.time.OffsetDateTime;
-import java.util.UUID;
 
 public record Academy(
-    UUID id,
-    String academyNumber,
+    Long id,
+    Long academyNumber,
     String name,
-    String themeColor,
     String logoUrl,
+    String primaryColor,
     OffsetDateTime createdAt
 ) {}

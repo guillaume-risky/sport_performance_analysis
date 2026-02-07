@@ -33,7 +33,8 @@ public class InviteService {
 
     @Transactional
     public InviteResponse createInvite(InviteRequest request) {
-        Academy academy = academyRepository.findByAcademyNumber(request.academyNumber())
+        Long academyNumber = Long.parseLong(request.academyNumber());
+        Academy academy = academyRepository.findByAcademyNumber(academyNumber)
             .orElseThrow(() -> new ResourceNotFoundException("Academy with number " + request.academyNumber() + " not found"));
 
         if (!isValidRole(request.role())) {
@@ -46,7 +47,7 @@ public class InviteService {
         InviteToken inviteToken = new InviteToken(
             UUID.randomUUID(),
             token,
-            academy.id(),
+            request.academyNumber(),
             request.email(),
             request.role(),
             expiresAt,
@@ -86,13 +87,12 @@ public class InviteService {
 
         User user = userService.getOrCreateUser(
             inviteToken.email(),
-            inviteToken.role(),
-            inviteToken.academyId()
+            inviteToken.role()
         );
 
         inviteRepository.markAsUsed(inviteToken.id(), OffsetDateTime.now());
 
-        return new AcceptInviteResponse(user.userNumber(), user.role());
+        return new AcceptInviteResponse(user.userNumber().toString(), user.role());
     }
 
     private String generateToken() {

@@ -20,7 +20,7 @@ public class InviteRepository {
     private static final RowMapper<InviteToken> ROW_MAPPER = (rs, rowNum) -> new InviteToken(
         UUID.fromString(rs.getString("id")),
         rs.getString("token"),
-        UUID.fromString(rs.getString("academy_id")),
+        rs.getString("academy_number"),
         rs.getString("email"),
         rs.getString("role"),
         rs.getObject("expires_at", OffsetDateTime.class),
@@ -30,15 +30,15 @@ public class InviteRepository {
 
     public InviteToken save(InviteToken inviteToken) {
         String sql = """
-            INSERT INTO invite_token (id, token, academy_id, email, role, expires_at, used_at, created_at)
+            INSERT INTO invite_token (id, token, academy_number, email, role, expires_at, used_at, created_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-            RETURNING id, token, academy_id, email, role, expires_at, used_at, created_at
+            RETURNING id, token, academy_number, email, role, expires_at, used_at, created_at
             """;
         
         return jdbcTemplate.queryForObject(sql, ROW_MAPPER,
             inviteToken.id(),
             inviteToken.token(),
-            inviteToken.academyId(),
+            inviteToken.academyNumber(),
             inviteToken.email(),
             inviteToken.role(),
             inviteToken.expiresAt(),
@@ -49,7 +49,7 @@ public class InviteRepository {
 
     public Optional<InviteToken> findByToken(String token) {
         String sql = """
-            SELECT id, token, academy_id, email, role, expires_at, used_at, created_at
+            SELECT id, token, academy_number, email, role, expires_at, used_at, created_at
             FROM invite_token
             WHERE token = ?
             """;
