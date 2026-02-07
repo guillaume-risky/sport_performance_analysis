@@ -170,6 +170,107 @@ docker compose down -v
 - PostgreSQL 16 (Alpine)
 - Port: 5432
 - Volume: `sport_performance_postgres_data`
+- Migration Tool: Flyway
+
+## Database Migrations
+
+The API uses Flyway for database schema management. Migrations are located in `api/src/main/resources/db/migration/`.
+
+### How Migrations Work
+
+Flyway automatically applies migrations when the Spring Boot application starts. Migration files follow the naming convention:
+- `V{version}__{description}.sql` (e.g., `V1__Create_base_tables.sql`)
+
+### Applying Migrations
+
+Migrations are applied automatically when you start the API:
+
+```powershell
+cd api
+mvn spring-boot:run
+```
+
+Flyway will:
+1. Check the current database schema version
+2. Apply any pending migrations in order
+3. Update the `flyway_schema_history` table to track applied migrations
+
+### Verifying Migrations
+
+To verify that migrations have been applied successfully:
+
+```powershell
+# Connect to the database
+docker exec -it sport_performance_postgres psql -U postgres -d sport_performance
+
+# List all tables
+\dt
+
+# Check Flyway migration history
+SELECT * FROM flyway_schema_history ORDER BY installed_rank;
+
+# Exit psql
+\q
+```
+
+### Resetting Local Database
+
+**Warning**: This will delete all data in your local database.
+
+To completely reset the local database:
+
+```powershell
+# Stop the database
+cd infra
+docker compose down -v
+
+# Remove the volume (this deletes all data)
+docker volume rm sport_performance_postgres_data
+
+# Start the database again
+docker compose up -d
+
+# Start the API to apply migrations
+cd ..\api
+mvn spring-boot:run
+```
+
+Alternatively, you can drop and recreate the database:
+
+```powershell
+# Connect to PostgreSQL
+docker exec -it sport_performance_postgres psql -U postgres
+
+# Drop and recreate the database
+DROP DATABASE sport_performance;
+CREATE DATABASE sport_performance;
+
+# Exit psql
+\q
+
+# Start the API to apply migrations
+cd api
+mvn spring-boot:run
+```
+
+### Migration Files
+
+The database schema is organized across multiple migration files:
+
+- **V1**: Base tables (Academy, Sport, Team, User, Player)
+- **V2**: Positions and Skills tables
+- **V3**: Events and Sessions tables
+- **V4**: Feedback, Insights, and Transcripts
+- **V5**: Reporting tables (Training, Match, Skill, Trial reports, Daily stats, Final reports)
+- **V6**: Audit and Security tables (OTP logs, Audit logs, Blocked access attempts)
+
+### Database Schema Principles
+
+- **Multi-tenant isolation**: All tables include `academy_id` for tenant isolation
+- **Immutable identity numbers**: Primary linking keys (academy_number, sport_unit_number, team_unit_number, user_number, player_system_number, event_unique_number) are immutable
+- **Referential integrity**: Foreign keys enforce relationships between entities
+- **Historical versions**: Key records maintain history tables for auditability
+- **No coach attribution**: Consolidated insights table does not store coach attribution for player-facing outputs
 
 ## Troubleshooting
 
