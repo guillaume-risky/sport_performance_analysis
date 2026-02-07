@@ -1,20 +1,23 @@
 package com.sportperformance.api.controller;
 
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
+import java.time.OffsetDateTime;
 import java.util.Map;
 
 @RestController
+@RequestMapping("/api/v1")
 public class HealthController {
 
-    @GetMapping("/health")
-    public ResponseEntity<Map<String, String>> health() {
-        Map<String, String> response = new HashMap<>();
-        response.put("status", "ok");
-        return ResponseEntity.ok(response);
+    @GetMapping(value = "/health", produces = MediaType.APPLICATION_JSON_VALUE)
+    public Map<String, Object> health() {
+        return Map.of(
+            "service", "sport-performance-api",
+            "status", "ok",
+            "time", OffsetDateTime.now().toString()
+        );
     }
-
 }
